@@ -8,6 +8,8 @@
 /*                                                                     */
 /***********************************************************************/
 
+#define CAML_NAME_SPACE
+
 #ifndef _COQ_CAML_GC_
 #define _COQ_CAML_GC_
 #include <caml/mlvalues.h>
@@ -16,9 +18,8 @@
 
 typedef void (*scanning_action) (value, value *);
 
+#include <caml/minor_gc.h>
 
-CAMLextern char *young_ptr;
-CAMLextern char *young_limit;
 CAMLextern void (*scan_roots_hook) (scanning_action);
 CAMLextern void minor_collection (void);
 
@@ -43,16 +44,16 @@ CAMLextern void minor_collection (void);
 #endif
 
 #define Alloc_small(result, wosize, tag) do{                            \
-  young_ptr -= Bhsize_wosize (wosize);                                  \
-  if (young_ptr < young_limit){                                         \
-    young_ptr += Bhsize_wosize (wosize);                                \
+  caml_young_ptr -= Bhsize_wosize (wosize);                                  \
+  if (caml_young_ptr < caml_young_limit){                                         \
+    caml_young_ptr += Bhsize_wosize (wosize);                                \
     Setup_for_gc;                                                       \
     minor_collection ();                                                \
     Restore_after_gc;                                                   \
-    young_ptr -= Bhsize_wosize (wosize);                                \
+    caml_young_ptr -= Bhsize_wosize (wosize);                                \
   }                                                                     \
-  Hd_hp (young_ptr) = Make_header ((wosize), (tag), Caml_black);        \
-  (result) = Val_hp (young_ptr);                                        \
+  Hd_hp (caml_young_ptr) = Make_header ((wosize), (tag), Caml_black);        \
+  (result) = Val_hp (caml_young_ptr);                                        \
   }while(0)
 
 
